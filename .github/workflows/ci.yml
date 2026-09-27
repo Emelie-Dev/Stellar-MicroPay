@@ -34,7 +34,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - name: Cache frontend dependencies
+        id: frontend-cache
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - if: steps.frontend-cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run type-check
       - run: npm run lint
       - run: npm test
@@ -58,7 +65,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      - name: Cache backend dependencies
+        id: backend-cache
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - if: steps.backend-cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run lint
       - run: npm test
 
@@ -93,7 +107,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - name: Cache frontend dependencies
+        id: e2e-frontend-cache
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - if: steps.e2e-frontend-cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - if: always()
