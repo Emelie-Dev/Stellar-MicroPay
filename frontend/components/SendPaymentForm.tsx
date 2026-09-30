@@ -970,6 +970,7 @@ export default function SendPaymentForm({
                         key={address}
                         type="button"
                         role="option"
+                        aria-selected={destination === address}
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           setDestination(address);
