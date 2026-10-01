@@ -1015,7 +1015,7 @@ export default function SendPaymentForm({
                   aria-autocomplete="list"
                   aria-expanded={contactSuggestions.length > 0}
                   aria-controls="destination-suggestions"
-                  placeholder="G... or @username"
+                  placeholder="G... or alice.xlm"
                   className={clsx(
                     "input-field font-mono text-sm",
                     destination &&
