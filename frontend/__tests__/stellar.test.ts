@@ -9,7 +9,6 @@ import {
   server,
   truncateMemoText,
   TransactionCategory,
-  truncateMemoText,
 } from "@/lib/stellar";
 import { Account, Keypair, Transaction } from "@stellar/stellar-sdk";
 
@@ -189,7 +188,8 @@ describe("Stellar helper", () => {
   });
 
   describe("memo types in buildPaymentTransaction", () => {
-    const sourcePublicKey = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+    const sourcePublicKey =
+      "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
     const destinationPublicKey = VALID_MAINNET_ADDRESS;
     const HASH_HEX = "a".repeat(64);
 
@@ -237,7 +237,9 @@ describe("Stellar helper", () => {
         memoType: "hash",
       });
       expect(tx.memo.type).toBe("hash");
-      expect(Buffer.from(tx.memo.value as Buffer).toString("hex")).toBe(HASH_HEX);
+      expect(Buffer.from(tx.memo.value as Buffer).toString("hex")).toBe(
+        HASH_HEX,
+      );
       expect(createStellarMemo("hash", HASH_HEX).type).toBe("hash");
     });
 
@@ -250,13 +252,17 @@ describe("Stellar helper", () => {
         memoType: "return",
       });
       expect(tx.memo.type).toBe("return");
-      expect(Buffer.from(tx.memo.value as Buffer).toString("hex")).toBe(HASH_HEX);
+      expect(Buffer.from(tx.memo.value as Buffer).toString("hex")).toBe(
+        HASH_HEX,
+      );
       expect(createStellarMemo("return", HASH_HEX).type).toBe("return");
     });
 
     it("rejects invalid MEMO_ID and MEMO_HASH values", () => {
       expect(() => createStellarMemo("id", "not-a-number")).toThrow(/uint64/i);
-      expect(() => createStellarMemo("hash", "deadbeef")).toThrow(/32-byte hex/i);
+      expect(() => createStellarMemo("hash", "deadbeef")).toThrow(
+        /32-byte hex/i,
+      );
       expect(() => createStellarMemo("return", "xyz")).toThrow(/32-byte hex/i);
     });
   });

@@ -129,15 +129,24 @@ export default function SendPaymentForm({
   const [memoType, setMemoType] = useState<StellarMemoType>("text");
   const [memoError, setMemoError] = useState<string | null>(null);
   const [isResolvingUsername, setIsResolvingUsername] = useState(false);
-  const [usernameResolutionError, setUsernameResolutionError] = useState<string | null>(null);
+  const [usernameResolutionError, setUsernameResolutionError] = useState<
+    string | null
+  >(null);
 
   // SNS (.xlm domain) resolution (#1197)
   const [isResolvingSNS, setIsResolvingSNS] = useState(false);
-  const [snsResolvingDomain, setSnsResolvingDomain] = useState<string | null>(null);
-  const [snsResolvedAddress, setSnsResolvedAddress] = useState<string | null>(null);
+  const [snsResolvingDomain, setSnsResolvingDomain] = useState<string | null>(
+    null,
+  );
+  const [snsResolvedAddress, setSnsResolvedAddress] = useState<string | null>(
+    null,
+  );
   const [snsError, setSnsError] = useState<string | null>(null);
   const snsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [customAsset, setCustomAsset] = useState<CustomAsset>({ code: "", issuer: "" });
+  const [customAsset, setCustomAsset] = useState<CustomAsset>({
+    code: "",
+    issuer: "",
+  });
   const [showCustomAssetForm, setShowCustomAssetForm] = useState(false);
   const [selectedMemoTemplate, setSelectedMemoTemplate] = useState<
     string | null
@@ -378,7 +387,10 @@ export default function SendPaymentForm({
     setMemoError(null);
   };
 
-  const validateMemoValue = (type: StellarMemoType, value: string): string | null => {
+  const validateMemoValue = (
+    type: StellarMemoType,
+    value: string,
+  ): string | null => {
     const trimmed = value.trim();
     if (!trimmed) return null;
     if (type === "id") {
@@ -387,7 +399,8 @@ export default function SendPaymentForm({
     }
     if (type === "hash" || type === "return") {
       const hex = trimmed.toLowerCase().replace(/^0x/, "");
-      if (!/^[0-9a-f]*$/.test(hex)) return `MEMO_${type.toUpperCase()} must be hexadecimal`;
+      if (!/^[0-9a-f]*$/.test(hex))
+        return `MEMO_${type.toUpperCase()} must be hexadecimal`;
       if (hex.length !== STELLAR_MEMO_HASH_HEX_LENGTH) {
         return `MEMO_${type.toUpperCase()} requires ${STELLAR_MEMO_HASH_HEX_LENGTH} hex characters (32 bytes)`;
       }
@@ -415,7 +428,9 @@ export default function SendPaymentForm({
     } else if (memoType === "id") {
       next = value.replace(/\D/g, "");
     } else {
-      next = value.replace(/[^0-9a-fA-Fx]/g, "").slice(0, STELLAR_MEMO_HASH_HEX_LENGTH + 2);
+      next = value
+        .replace(/[^0-9a-fA-Fx]/g, "")
+        .slice(0, STELLAR_MEMO_HASH_HEX_LENGTH + 2);
     }
     setMemo(next);
     setMemoError(validateMemoValue(memoType, next));
@@ -479,14 +494,24 @@ export default function SendPaymentForm({
   const isValidDest =
     destination.length > 0 && isValidStellarAddress(destination);
 
-  const isUsernameDestination = /^@?[a-zA-Z0-9]{3,20}$/.test(destination) && !isValidStellarAddress(destination);
+  const isUsernameDestination =
+    /^@?[a-zA-Z0-9]{3,20}$/.test(destination) &&
+    !isValidStellarAddress(destination);
   const isSNSDestination = destination.toLowerCase().endsWith(".xlm");
 
   const MIN_STROOP = 0.0000001;
-  const isValidAmt = !Number.isNaN(amountNum) && amountNum >= MIN_STROOP && amountNum <= maxSend;
+  const isValidAmt =
+    !Number.isNaN(amountNum) && amountNum >= MIN_STROOP && amountNum <= maxSend;
 
-  const canSubmit = (isValidDest || (isUsernameDestination && !isResolvingUsername && !usernameResolutionError)) &&
-    isValidAmt && isMemoValid && status === "idle" && destination !== publicKey;
+  const canSubmit =
+    (isValidDest ||
+      (isUsernameDestination &&
+        !isResolvingUsername &&
+        !usernameResolutionError)) &&
+    isValidAmt &&
+    isMemoValid &&
+    status === "idle" &&
+    destination !== publicKey;
 
   const resolveUsername = async (username: string) => {
     const cleanUsername = username.replace(/^@/, "").toLowerCase();
@@ -975,140 +1000,108 @@ export default function SendPaymentForm({
             </div>
           )}
 
-            <input
-              type="text"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              onFocus={() => setIsRecentDropdownOpen(recentRecipients.length > 0)}
-              onKeyDown={handleDestinationKeyDown}
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded={contactSuggestions.length > 0}
-              aria-controls="destination-suggestions"
-              placeholder="G... or alice.xlm"
-              className={clsx("input-field font-mono text-sm", destination && !isValidDest && !isUsernameDestination && !isSNSDestination && "border-red-500/50")}
-              disabled={status !== "idle" || destinationReadOnly}
-            />
-
-            {isRecentDropdownOpen && recentRecipients.length > 0 && contactSuggestions.length === 0 && (
-              <div role="listbox" aria-label="Recent destinations" className="absolute left-0 right-0 z-40 mt-1 overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
-                <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Recent destinations</p>
-                {recentRecipients.map((address) => (
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={false}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => { setDestination(address); setIsRecentDropdownOpen(false); }}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left font-mono text-sm text-slate-200 hover:bg-white/5"
-                  >
-                    {isFavouritesDropdownOpen ? "Close" : "Favourites"}
-                  </button>
-                ))}
-                <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={clearRecipients} className="w-full border-t border-white/10 px-3 py-2 text-left text-xs font-medium text-red-300 hover:bg-white/5">
-                  Clear history
-                </button>
-              </div>
-            )}
-
-            {isResolvingSNS && snsResolvingDomain && (
-              <p className="text-xs text-slate-400" role="status">
-                Resolving {snsResolvingDomain}…
-              </p>
-            )}
-            {snsResolvedAddress && (
-              <div className="flex items-center justify-between gap-2">
-                <span className="bg-green-100 rounded-lg px-3 py-2 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                  Resolved: {snsResolvedAddress}
-                </span>
+          {!hideDestinationField && (
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  onFocus={() =>
+                    setIsRecentDropdownOpen(recentRecipients.length > 0)
+                  }
+                  onKeyDown={handleDestinationKeyDown}
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={contactSuggestions.length > 0}
+                  aria-controls="destination-suggestions"
+                  placeholder="G... or @username"
+                  className={clsx(
+                    "input-field font-mono text-sm",
+                    destination &&
+                      !isValidDest &&
+                      !isUsernameDestination &&
+                      !isSNSDestination &&
+                      "border-red-500/50",
+                  )}
+                  disabled={status !== "idle" || destinationReadOnly}
+                />
                 <button
                   type="button"
-                  onClick={handleUseSNSAddress}
-                  className="text-xs font-semibold text-green-900 underline hover:text-green-700 dark:text-green-100 dark:hover:text-green-300"
+                  onClick={() => {
+                    const existing = favourites.find(
+                      (f) => f.address === destination,
+                    );
+                    if (existing) deleteFavourite(destination);
+                    else {
+                      const name = prompt(
+                        "Name this favourite:",
+                        destination.slice(0, 8),
+                      );
+                      if (name)
+                        saveFavourites([
+                          ...favourites,
+                          { name, address: destination },
+                        ]);
+                    }
+                  }}
+                  className="text-stellar-400 hover:text-stellar-300"
+                  title={
+                    favourites.some((f) => f.address === destination)
+                      ? "Remove favourite"
+                      : "Add favourite"
+                  }
                 >
-                  Use address
+                  <StarIcon
+                    className="h-5 w-5"
+                    filled={favourites.some((f) => f.address === destination)}
+                  />
                 </button>
-              </div>
-            )}
-            {snsError && (
-              <p className="text-xs text-red-400" role="alert">
-                {snsError}
-              </p>
-            )}
-
-            {contactSuggestions.length > 0 && (
-              <ul id="destination-suggestions" role="listbox" aria-label="Contact suggestions" className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-slate-900 p-1 shadow-2xl">
-                {contactSuggestions.map((item, index) => (
-                  <li key={item.address} role="option" aria-selected={index === activeSuggestion}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const existing = favourites.find(
-                          (f) => f.address === destination,
-                        );
-                        if (existing) deleteFavourite(destination);
-                        else {
-                          const name = prompt(
-                            "Name this favourite:",
-                            destination.slice(0, 8),
-                          );
-                          if (name)
-                            saveFavourites([
-                              ...favourites,
-                              { name, address: destination },
-                            ]);
-                        }
-                      }}
-                      className="text-stellar-400 hover:text-stellar-300"
-                      title={
-                        favourites.some((f) => f.address === destination)
-                          ? "Remove favourite"
-                          : "Add favourite"
-                      }
-                    >
-                      <StarIcon
-                        className="h-5 w-5"
-                        filled={favourites.some(
-                          (f) => f.address === destination,
-                        )}
-                      />
-                    </button>
-                  )}
-                  {isScannerSupported && status === "idle" && (
-                    <button
-                      type="button"
-                      onClick={openScanner}
-                      className="text-slate-400 hover:text-white"
-                      title="Scan QR Code"
-                    >
-                      <QrCodeIcon className="h-5 w-5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <input
-                type="text"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                onFocus={() =>
-                  setIsRecentDropdownOpen(recentRecipients.length > 0)
-                }
-                onKeyDown={handleDestinationKeyDown}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={contactSuggestions.length > 0}
-                aria-controls="destination-suggestions"
-                placeholder="G... or @username"
-                className={clsx(
-                  "input-field font-mono text-sm",
-                  destination &&
-                    !isValidDest &&
-                    !isUsernameDestination &&
-                    "border-red-500/50",
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsFavouritesDropdownOpen(!isFavouritesDropdownOpen)
+                  }
+                  className="text-sm text-slate-400 hover:text-white"
+                >
+                  {isFavouritesDropdownOpen ? "Close" : "Favourites"}
+                </button>
+                {isScannerSupported && status === "idle" && (
+                  <button
+                    type="button"
+                    onClick={openScanner}
+                    className="text-slate-400 hover:text-white"
+                    title="Scan QR Code"
+                  >
+                    <QrCodeIcon className="h-5 w-5" />
+                  </button>
                 )}
-                disabled={status !== "idle" || destinationReadOnly}
-              />
+              </div>
+
+              {isResolvingSNS && snsResolvingDomain && (
+                <p className="text-xs text-slate-400" role="status">
+                  Resolving {snsResolvingDomain}…
+                </p>
+              )}
+              {snsResolvedAddress && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="bg-green-100 rounded-lg px-3 py-2 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                    Resolved: {snsResolvedAddress}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleUseSNSAddress}
+                    className="text-xs font-semibold text-green-900 underline hover:text-green-700 dark:text-green-100 dark:hover:text-green-300"
+                  >
+                    Use address
+                  </button>
+                </div>
+              )}
+              {snsError && (
+                <p className="text-xs text-red-400" role="alert">
+                  {snsError}
+                </p>
+              )}
 
               {isRecentDropdownOpen &&
                 recentRecipients.length > 0 &&
@@ -1260,84 +1253,94 @@ export default function SendPaymentForm({
             </div>
           )}
 
-        {!hideMemoField && (
-          <div>
-            <label className="label" htmlFor="memo-type">Memo (optional)</label>
-            <select
-              id="memo-type"
-              value={memoType}
-              onChange={(e) => handleMemoTypeChange(e.target.value as StellarMemoType)}
-              className="input-field mb-2"
-              disabled={status !== "idle"}
-              aria-label="Memo type"
-            >
-              <option value="text">MEMO_TEXT</option>
-              <option value="id">MEMO_ID</option>
-              <option value="hash">MEMO_HASH</option>
-              <option value="return">MEMO_RETURN</option>
-            </select>
-            <input
-              type={memoType === "id" ? "text" : "text"}
-              inputMode={memoType === "id" ? "numeric" : "text"}
-              value={memo}
-              onChange={(e) => handleMemoChange(e.target.value)}
-              placeholder={memoPlaceholder}
-              className={clsx("input-field", memoError && "border-red-500/50")}
-              disabled={status !== "idle"}
-              maxLength={
-                memoType === "text"
-                  ? STELLAR_MEMO_TEXT_MAX_BYTES
-                  : memoType === "id"
-                    ? 20
-                    : STELLAR_MEMO_HASH_HEX_LENGTH + 2
-              }
-              aria-label="Memo value"
-            />
-            {memoType === "text" && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {memoTemplates.map((template) => {
-                  const isActive = selectedMemoTemplate === template;
-                  return (
-                    <button
-                      key={template}
-                      type="button"
-                      onClick={() => handleMemoTemplateClick(template)}
-                      disabled={status !== "idle"}
-                      className={clsx(
-                        "inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-stellar-500/20 border-stellar-500/30 text-stellar-300"
-                          : "bg-stellar-500/10 border-stellar-500/15 text-slate-300 hover:bg-stellar-500/15",
-                        status !== "idle" && "cursor-not-allowed opacity-50",
-                      )}
-                    >
-                      {template}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {memoError ? (
-              <p className="mt-3 text-xs text-red-400">{memoError}</p>
-            ) : (
-              <p className="mt-3 text-xs text-slate-500">
-                {memoType === "text"
-                  ? `${memoTextByteLength(memo)}/${STELLAR_MEMO_TEXT_MAX_BYTES} characters`
-                  : memoType === "id"
-                    ? "Unsigned 64-bit integer (uint64)"
-                    : `${memo.replace(/^0x/i, "").length}/${STELLAR_MEMO_HASH_HEX_LENGTH} hex characters`}
-              </p>
-            )}
-          </div>
-        )}
+          {!hideMemoField && (
+            <div>
+              <label className="label" htmlFor="memo-type">
+                Memo (optional)
+              </label>
+              <select
+                id="memo-type"
+                value={memoType}
+                onChange={(e) =>
+                  handleMemoTypeChange(e.target.value as StellarMemoType)
+                }
+                className="input-field mb-2"
+                disabled={status !== "idle"}
+                aria-label="Memo type"
+              >
+                <option value="text">MEMO_TEXT</option>
+                <option value="id">MEMO_ID</option>
+                <option value="hash">MEMO_HASH</option>
+                <option value="return">MEMO_RETURN</option>
+              </select>
+              <input
+                type={memoType === "id" ? "text" : "text"}
+                inputMode={memoType === "id" ? "numeric" : "text"}
+                value={memo}
+                onChange={(e) => handleMemoChange(e.target.value)}
+                placeholder={memoPlaceholder}
+                className={clsx(
+                  "input-field",
+                  memoError && "border-red-500/50",
+                )}
+                disabled={status !== "idle"}
+                maxLength={
+                  memoType === "text"
+                    ? STELLAR_MEMO_TEXT_MAX_BYTES
+                    : memoType === "id"
+                      ? 20
+                      : STELLAR_MEMO_HASH_HEX_LENGTH + 2
+                }
+                aria-label="Memo value"
+              />
+              {memoType === "text" && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {memoTemplates.map((template) => {
+                    const isActive = selectedMemoTemplate === template;
+                    return (
+                      <button
+                        key={template}
+                        type="button"
+                        onClick={() => handleMemoTemplateClick(template)}
+                        disabled={status !== "idle"}
+                        className={clsx(
+                          "inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-stellar-500/20 border-stellar-500/30 text-stellar-300"
+                            : "bg-stellar-500/10 border-stellar-500/15 text-slate-300 hover:bg-stellar-500/15",
+                          status !== "idle" && "cursor-not-allowed opacity-50",
+                        )}
+                      >
+                        {template}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {memoError ? (
+                <p className="mt-3 text-xs text-red-400">{memoError}</p>
+              ) : (
+                <p className="mt-3 text-xs text-slate-500">
+                  {memoType === "text"
+                    ? `${memoTextByteLength(memo)}/${STELLAR_MEMO_TEXT_MAX_BYTES} characters`
+                    : memoType === "id"
+                      ? "Unsigned 64-bit integer (uint64)"
+                      : `${memo.replace(/^0x/i, "").length}/${STELLAR_MEMO_HASH_HEX_LENGTH} hex characters`}
+                </p>
+              )}
+            </div>
+          )}
 
-        <button
-          onClick={openConfirmation}
-          disabled={!canSubmit || status !== "idle"}
-          className="btn-primary w-full flex items-center justify-center gap-2"
-        >
-          {status === "idle" ? `Send ${amount || ""} ${selectedAsset}` : "Processing..."}
-        </button>
+          <button
+            onClick={openConfirmation}
+            disabled={!canSubmit || status !== "idle"}
+            className="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            {status === "idle"
+              ? `Send ${amount || ""} ${selectedAsset}`
+              : "Processing..."}
+          </button>
+        </div>
       </div>
 
       <SendConfirmationModal
@@ -1570,7 +1573,17 @@ interface SendConfirmationModalProps {
   onConfirm: () => void;
 }
 
-function SendConfirmationModal({ isOpen, destination, amount, memo, memoType, estimatedFee, usdValue, onCancel, onConfirm }: SendConfirmationModalProps) {
+function SendConfirmationModal({
+  isOpen,
+  destination,
+  amount,
+  memo,
+  memoType,
+  estimatedFee,
+  usdValue,
+  onCancel,
+  onConfirm,
+}: SendConfirmationModalProps) {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -1600,7 +1613,9 @@ function SendConfirmationModal({ isOpen, destination, amount, memo, memoType, es
           </div>
           {memo && (
             <div>
-              <p className="text-xs text-slate-500 uppercase font-bold">Memo ({memoType.toUpperCase()})</p>
+              <p className="text-xs text-slate-500 uppercase font-bold">
+                Memo ({memoType.toUpperCase()})
+              </p>
               <p className="text-sm text-slate-200 break-all">{memo}</p>
             </div>
           )}
